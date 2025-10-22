@@ -1,6 +1,8 @@
 package ru.spb.taranenkoant.concurrency.lab.domain.model;
 
 
+import ru.spb.taranenkoant.concurrency.lab.domain.exception.InsufficientBalanceException;
+
 import java.math.BigDecimal;
 
 /**
@@ -24,7 +26,7 @@ public class User {
 
     public void deductBalance(BigDecimal amount) {
         if (!canAfford(amount)) {
-            throw new RuntimeException("Insufficient balance");
+            throw new InsufficientBalanceException("Insufficient balance");
         }
         balance = balance.subtract(amount);
     }
