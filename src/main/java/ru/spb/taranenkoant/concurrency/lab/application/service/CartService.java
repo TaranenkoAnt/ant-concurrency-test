@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 import ru.spb.taranenkoant.concurrency.lab.application.port.in.CartUseCase;
 import ru.spb.taranenkoant.concurrency.lab.application.port.in.ProductUseCase;
 import ru.spb.taranenkoant.concurrency.lab.application.port.out.CartRepository;
+import ru.spb.taranenkoant.concurrency.lab.application.port.out.OrderRepository;
 import ru.spb.taranenkoant.concurrency.lab.application.port.out.ProductRepository;
 import ru.spb.taranenkoant.concurrency.lab.domain.exception.InsufficientStockException;
 import ru.spb.taranenkoant.concurrency.lab.domain.model.*;
