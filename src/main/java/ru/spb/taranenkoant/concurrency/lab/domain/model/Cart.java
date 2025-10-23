@@ -17,6 +17,10 @@ public class Cart {
     private User user;
     private Map<Long, CartItem> items = new ConcurrentHashMap<>();
 
+    public Cart(User user) {
+        this.user = user;
+    }
+
     public void addItem(Product product, int quantity) {
         items.compute(product.getId(), (productId, existingItem) -> {
             if (existingItem == null) {
