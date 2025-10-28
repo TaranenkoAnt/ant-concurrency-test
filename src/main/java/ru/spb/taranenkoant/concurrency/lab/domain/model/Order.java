@@ -19,6 +19,9 @@ public class Order {
     private List<OrderItem> items;
     private LocalDateTime createdAt;
 
+    public Order() {
+    }
+
     public Order(Long userId, List<CartItem> items) {
         this.userId = userId;
         this.status = OrderStatus.CREATED;

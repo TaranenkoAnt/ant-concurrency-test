@@ -34,6 +34,10 @@ public class Product {
         }
     }
 
+    public void increaseStock(int quantity) {
+        stockQuantity.addAndGet(quantity);
+    }
+
     public void release(int quantity) {
         stockQuantity.addAndGet(quantity);
     }

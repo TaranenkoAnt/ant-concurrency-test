@@ -46,6 +46,9 @@ public class ProductService implements ProductUseCase {
 
     @Override
     public void releaseProduct(Long productId, int quantity) {
-
+        Product product = productRepository.findById(productId)
+                .orElseThrow(() -> new RuntimeException("Product not founded"));
+        product.release(quantity);
+        productRepository.save(product);
     }
 }

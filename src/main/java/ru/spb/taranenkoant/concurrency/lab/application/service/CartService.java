@@ -1,6 +1,8 @@
 package ru.spb.taranenkoant.concurrency.lab.application.service;
 
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import ru.spb.taranenkoant.concurrency.lab.application.port.in.CartUseCase;
 import ru.spb.taranenkoant.concurrency.lab.application.port.in.ProductUseCase;
@@ -20,6 +22,8 @@ import java.math.BigDecimal;
 @Service
 @Transactional
 public class CartService implements CartUseCase {
+
+    private final Logger logger = LoggerFactory.getLogger(getClass());
 
     private final CartRepository cartRepository;
     private final ProductRepository productRepository;
@@ -44,14 +48,35 @@ public class CartService implements CartUseCase {
     // PROBLEM 1: Race condition в добавлении товара
     @Override
     public void addItemToCart(Long userId, Long productId, int quantity) {
-        Cart cart = cartRepository.findByUserId(userId)
-                .orElseGet(() -> createNewCart(userId));
+        logger.debug("Thread {}: Starting addItemToCart for user {}",
+                Thread.currentThread().getName(), userId);
 
+        // Шаг 1: Получаем корзину
+        Cart cart = cartRepository.findByUserId(userId)
+                .orElseGet(() -> {
+                    logger.debug("Thread {}: Creating new cart for user {}",
+                            Thread.currentThread().getName(), userId);
+                    return createNewCart(userId);
+                });
+
+        logger.debug("Thread {}: Retrieved cart with {} items",
+                Thread.currentThread().getName(), cart.getItems().size());
+
+        // Шаг 2: Получаем продукт
         Product product = productRepository.findById(productId)
                 .orElseThrow(() -> new RuntimeException("Product not found"));
 
+        // Шаг 3: Добавляем товар в корзину
+        int beforeSize = cart.getItems().size();
         cart.addItem(product, quantity);
+        int afterSize = cart.getItems().size();
+
+        logger.debug("Thread {}: Added item. Cart size: {} -> {}",
+                Thread.currentThread().getName(), beforeSize, afterSize);
+
+        // Шаг 4: Сохраняем корзину
         cartRepository.save(cart);
+        logger.debug("Thread {}: Saved cart", Thread.currentThread().getName());
     }
 
     @Override
@@ -71,12 +96,20 @@ public class CartService implements CartUseCase {
             }
         }
 
-        Order order = new Order(userId, cart.getItems());
-        Order savedOrder = orderRepository.save(order);
+        try {
+            Order order = new Order(userId, cart.getItems());
+            Order savedOrder = orderRepository.save(order);
 
-        cart.getItems().clear();
-        cartRepository.save(cart);
-        return savedOrder;
+            savedOrder.complete();
+            cart.getItems().clear();
+            cartRepository.save(cart);
+            return savedOrder;
+        } catch (Exception e) {
+            for (CartItem item : cart.getItems()) {
+                productUseCase.releaseProduct(item.product().getId(), item.quantity());
+            }
+            throw new RuntimeException("Checkout failed", e);
+        }
     }
 
     private Cart createNewCart(Long userId) {
